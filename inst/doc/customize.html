@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+
+
+<title>How to extend connector</title>
+
+<script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
+// be compatible with the behavior of Pandoc < 2.8).
+document.addEventListener('DOMContentLoaded', function(e) {
+  var hs = document.querySelectorAll("div.section[class*='level'] > :first-child");
+  var i, h, a;
+  for (i = 0; i < hs.length; i++) {
+    h = hs[i];
+    if (!/^h[1-6]$/i.test(h.tagName)) continue;  // it should be a header h1-h6
+    a = h.attributes;
+    while (a.length > 0) h.removeAttribute(a[0].name);
+  }
+});
+</script>
+
+<style type="text/css">
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+span.underline{text-decoration: underline;}
+div.column{display: inline-block; vertical-align: top; width: 50%;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+</style>
+
+
+
+<style type="text/css">
+code {
+white-space: pre;
+}
+.sourceCode {
+overflow: visible;
+}
+</style>
+<style type="text/css" data-origin="pandoc">
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+{ counter-reset: source-line 0; }
+pre.numberSource code > span
+{ position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+{ content: counter(source-line);
+position: relative; left: -1em; text-align: right; vertical-align: baseline;
+border: none; display: inline-block;
+-webkit-touch-callout: none; -webkit-user-select: none;
+-khtml-user-select: none; -moz-user-select: none;
+-ms-user-select: none; user-select: none;
+padding: 0 4px; width: 4em;
+color: #aaaaaa;
+}
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa; padding-left: 4px; }
+div.sourceCode
+{ }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } 
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.at { color: #7d9029; } 
+code span.bn { color: #40a070; } 
+code span.bu { color: #008000; } 
+code span.cf { color: #007020; font-weight: bold; } 
+code span.ch { color: #4070a0; } 
+code span.cn { color: #880000; } 
+code span.co { color: #60a0b0; font-style: italic; } 
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.do { color: #ba2121; font-style: italic; } 
+code span.dt { color: #902000; } 
+code span.dv { color: #40a070; } 
+code span.er { color: #ff0000; font-weight: bold; } 
+code span.ex { } 
+code span.fl { color: #40a070; } 
+code span.fu { color: #06287e; } 
+code span.im { color: #008000; font-weight: bold; } 
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.kw { color: #007020; font-weight: bold; } 
+code span.op { color: #666666; } 
+code span.ot { color: #007020; } 
+code span.pp { color: #bc7a00; } 
+code span.sc { color: #4070a0; } 
+code span.ss { color: #bb6688; } 
+code span.st { color: #4070a0; } 
+code span.va { color: #19177c; } 
+code span.vs { color: #4070a0; } 
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } 
+</style>
+<script>
+// apply pandoc div.sourceCode style to pre.sourceCode instead
+(function() {
+  var sheets = document.styleSheets;
+  for (var i = 0; i < sheets.length; i++) {
+    if (sheets[i].ownerNode.dataset["origin"] !== "pandoc") continue;
+    try { var rules = sheets[i].cssRules; } catch (e) { continue; }
+    var j = 0;
+    while (j < rules.length) {
+      var rule = rules[j];
+      // check if there is a div.sourceCode rule
+      if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") {
+        j++;
+        continue;
+      }
+      var style = rule.style.cssText;
+      // check if color or background-color is set
+      if (rule.style.color === '' && rule.style.backgroundColor === '') {
+        j++;
+        continue;
+      }
+      // replace div.sourceCode by a pre.sourceCode rule
+      sheets[i].deleteRule(j);
+      sheets[i].insertRule('pre.sourceCode{' + style + '}', j);
+    }
+  }
+})();
+</script>
+
+
+
+
+<style type="text/css">body {
+background-color: #fff;
+margin: 1em auto;
+max-width: 700px;
+overflow: visible;
+padding-left: 2em;
+padding-right: 2em;
+font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+font-size: 14px;
+line-height: 1.35;
+}
+#TOC {
+clear: both;
+margin: 0 0 10px 10px;
+padding: 4px;
+width: 400px;
+border: 1px solid #CCCCCC;
+border-radius: 5px;
+background-color: #f6f6f6;
+font-size: 13px;
+line-height: 1.3;
+}
+#TOC .toctitle {
+font-weight: bold;
+font-size: 15px;
+margin-left: 5px;
+}
+#TOC ul {
+padding-left: 40px;
+margin-left: -1.5em;
+margin-top: 5px;
+margin-bottom: 5px;
+}
+#TOC ul ul {
+margin-left: -2em;
+}
+#TOC li {
+line-height: 16px;
+}
+table {
+margin: 1em auto;
+border-width: 1px;
+border-color: #DDDDDD;
+border-style: outset;
+border-collapse: collapse;
+}
+table th {
+border-width: 2px;
+padding: 5px;
+border-style: inset;
+}
+table td {
+border-width: 1px;
+border-style: inset;
+line-height: 18px;
+padding: 5px 5px;
+}
+table, table th, table td {
+border-left-style: none;
+border-right-style: none;
+}
+table thead, table tr.even {
+background-color: #f7f7f7;
+}
+p {
+margin: 0.5em 0;
+}
+blockquote {
+background-color: #f6f6f6;
+padding: 0.25em 0.75em;
+}
+hr {
+border-style: solid;
+border: none;
+border-top: 1px solid #777;
+margin: 28px 0;
+}
+dl {
+margin-left: 0;
+}
+dl dd {
+margin-bottom: 13px;
+margin-left: 13px;
+}
+dl dt {
+font-weight: bold;
+}
+ul {
+margin-top: 0;
+}
+ul li {
+list-style: circle outside;
+}
+ul ul {
+margin-bottom: 0;
+}
+pre, code {
+background-color: #f7f7f7;
+border-radius: 3px;
+color: #333;
+white-space: pre-wrap; 
+}
+pre {
+border-radius: 3px;
+margin: 5px 0px 10px 0px;
+padding: 10px;
+}
+pre:not([class]) {
+background-color: #f7f7f7;
+}
+code {
+font-family: Consolas, Monaco, 'Courier New', monospace;
+font-size: 85%;
+}
+p > code, li > code {
+padding: 2px 0px;
+}
+div.figure {
+text-align: center;
+}
+img {
+background-color: #FFFFFF;
+padding: 2px;
+border: 1px solid #DDDDDD;
+border-radius: 3px;
+border: 1px solid #CCCCCC;
+margin: 0 5px;
+}
+h1 {
+margin-top: 0;
+font-size: 35px;
+line-height: 40px;
+}
+h2 {
+border-bottom: 4px solid #f7f7f7;
+padding-top: 10px;
+padding-bottom: 2px;
+font-size: 145%;
+}
+h3 {
+border-bottom: 2px solid #f7f7f7;
+padding-top: 10px;
+font-size: 120%;
+}
+h4 {
+border-bottom: 1px solid #f7f7f7;
+margin-left: 8px;
+font-size: 105%;
+}
+h5, h6 {
+border-bottom: 1px solid #ccc;
+font-size: 105%;
+}
+a {
+color: #0033dd;
+text-decoration: none;
+}
+a:hover {
+color: #6666ff; }
+a:visited {
+color: #800080; }
+a:visited:hover {
+color: #BB00BB; }
+a[href^="http:"] {
+text-decoration: underline; }
+a[href^="https:"] {
+text-decoration: underline; }
+
+code > span.kw { color: #555; font-weight: bold; } 
+code > span.dt { color: #902000; } 
+code > span.dv { color: #40a070; } 
+code > span.bn { color: #d14; } 
+code > span.fl { color: #d14; } 
+code > span.ch { color: #d14; } 
+code > span.st { color: #d14; } 
+code > span.co { color: #888888; font-style: italic; } 
+code > span.ot { color: #007020; } 
+code > span.al { color: #ff0000; font-weight: bold; } 
+code > span.fu { color: #900; font-weight: bold; } 
+code > span.er { color: #a61717; background-color: #e3d2d2; } 
+</style>
+
+
+
+
+</head>
+
+<body>
+
+
+
+
+<h1 class="title toc-ignore">How to extend connector</h1>
+
+
+
+<p><code>connector</code> is build to be easily extensible. This
+vignette will show you how to create your own connector classes, and how
+to customize the existing ones, and their methods.</p>
+<p>The basic <code>Connector</code> class is a simple <code>{R6}</code>
+object, with no additional functionality. It serves as the foundation
+for all other connectors, that should inherit from it in their
+<code>R6::R6Class()</code> definition - either directly or indirectly.
+Both <code>ConnectorFS</code> and <code>ConnectorDBI</code> inherit from
+<code>Connector</code> in this way.</p>
+<div id="creating-a-new-connector" class="section level2">
+<h2>Creating a new connector</h2>
+<p>We can create a new connector by creating a new R6 class that
+inherits from <code>Connector</code>:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a>connector_myclass <span class="ot">&lt;-</span> R6<span class="sc">::</span><span class="fu">R6Class</span>(</span>
+<span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a>  <span class="st">&quot;connector_myclass&quot;</span>,</span>
+<span id="cb1-3"><a href="#cb1-3" tabindex="-1"></a>  <span class="at">inherit =</span> Connector</span>
+<span id="cb1-4"><a href="#cb1-4" tabindex="-1"></a>)</span>
+<span id="cb1-5"><a href="#cb1-5" tabindex="-1"></a></span>
+<span id="cb1-6"><a href="#cb1-6" tabindex="-1"></a>connector_myclass<span class="sc">$</span><span class="fu">new</span>()</span>
+<span id="cb1-7"><a href="#cb1-7" tabindex="-1"></a><span class="co">#&gt; &lt;connector_myclass/Connector&gt;</span></span></code></pre></div>
+<p>This is the simplest type of inheritance, and you should note that
+the <code>Connector</code> parent class has no methods capable of
+e.g. reading (<code>read_cnt()</code>) or writing
+(<code>write_cnt()</code>) data. It only has default methods that throws
+meaningful errors if you have not defined the method
+(e.g. <code>write_cnt.my_class()</code>) for your new connector
+class.</p>
+<p>In most cases you want to inherit from either
+<code>ConnectorFS</code> or <code>ConnectorDBI</code> depending on if
+your new connector is used to access files or databases
+respectively.</p>
+<p>Below we create a new <code>connector_project</code> class that
+inherits and acts exactly as the <code>ConnectorFS</code>, but instead
+of the user having to provide the <code>path</code> to the folder as an
+argument, they provide the <code>project</code> name, and the
+<code>path</code> is constructed from that.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a>connector_project <span class="ot">&lt;-</span> R6<span class="sc">::</span><span class="fu">R6Class</span>(</span>
+<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a>  <span class="st">&quot;connector_project&quot;</span>,</span>
+<span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a>  <span class="at">inherit =</span> ConnectorFS,</span>
+<span id="cb2-4"><a href="#cb2-4" tabindex="-1"></a>  <span class="at">public =</span> <span class="fu">list</span>(</span>
+<span id="cb2-5"><a href="#cb2-5" tabindex="-1"></a>    <span class="at">initialize =</span> <span class="cf">function</span>(project) {</span>
+<span id="cb2-6"><a href="#cb2-6" tabindex="-1"></a>      private<span class="sc">$</span>.project <span class="ot">&lt;-</span> project</span>
+<span id="cb2-7"><a href="#cb2-7" tabindex="-1"></a>      path <span class="ot">&lt;-</span> <span class="fu">file.path</span>(tmp, <span class="st">&quot;my_root_path&quot;</span>, project)</span>
+<span id="cb2-8"><a href="#cb2-8" tabindex="-1"></a>      super<span class="sc">$</span><span class="fu">initialize</span>(path)</span>
+<span id="cb2-9"><a href="#cb2-9" tabindex="-1"></a>    }</span>
+<span id="cb2-10"><a href="#cb2-10" tabindex="-1"></a>  ),</span>
+<span id="cb2-11"><a href="#cb2-11" tabindex="-1"></a>  <span class="at">private =</span> <span class="fu">list</span>(</span>
+<span id="cb2-12"><a href="#cb2-12" tabindex="-1"></a>    <span class="at">.project =</span> <span class="cn">NULL</span></span>
+<span id="cb2-13"><a href="#cb2-13" tabindex="-1"></a>  ),</span>
+<span id="cb2-14"><a href="#cb2-14" tabindex="-1"></a>  <span class="at">active =</span> <span class="fu">list</span>(</span>
+<span id="cb2-15"><a href="#cb2-15" tabindex="-1"></a>    <span class="at">project =</span> <span class="cf">function</span>() {</span>
+<span id="cb2-16"><a href="#cb2-16" tabindex="-1"></a>      private<span class="sc">$</span>.project</span>
+<span id="cb2-17"><a href="#cb2-17" tabindex="-1"></a>    }</span>
+<span id="cb2-18"><a href="#cb2-18" tabindex="-1"></a>  )</span>
+<span id="cb2-19"><a href="#cb2-19" tabindex="-1"></a>)</span></code></pre></div>
+<p>This way of extending connector could e.g. be relevant inside an
+organisation where all projects are stored in a common folder
+structure.</p>
+<p>When we not initialize a <code>connector_project</code> you can see
+that it still has all the methods from <code>ConnectorFS</code>, and
+that the path has been assigned correctly based on the
+<code>project</code> argument:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a>my_project <span class="ot">&lt;-</span> connector_project<span class="sc">$</span><span class="fu">new</span>(<span class="at">project =</span> <span class="st">&quot;my_project&quot;</span>)</span>
+<span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a></span>
+<span id="cb3-3"><a href="#cb3-3" tabindex="-1"></a><span class="fu">print</span>(my_project)</span>
+<span id="cb3-4"><a href="#cb3-4" tabindex="-1"></a><span class="co">#&gt; &lt;connector_project/ConnectorFS&gt;</span></span>
+<span id="cb3-5"><a href="#cb3-5" tabindex="-1"></a><span class="co">#&gt; Inherits from: &lt;Connector&gt;</span></span>
+<span id="cb3-6"><a href="#cb3-6" tabindex="-1"></a><span class="co">#&gt; Registered methods:</span></span>
+<span id="cb3-7"><a href="#cb3-7" tabindex="-1"></a><span class="co">#&gt; • `create_directory_cnt.ConnectorFS()`</span></span>
+<span id="cb3-8"><a href="#cb3-8" tabindex="-1"></a><span class="co">#&gt; • `download_cnt.ConnectorFS()`</span></span>
+<span id="cb3-9"><a href="#cb3-9" tabindex="-1"></a><span class="co">#&gt; • `download_directory_cnt.ConnectorFS()`</span></span>
+<span id="cb3-10"><a href="#cb3-10" tabindex="-1"></a><span class="co">#&gt; • `list_content_cnt.ConnectorFS()`</span></span>
+<span id="cb3-11"><a href="#cb3-11" tabindex="-1"></a><span class="co">#&gt; • `log_read_connector.ConnectorFS()`</span></span>
+<span id="cb3-12"><a href="#cb3-12" tabindex="-1"></a><span class="co">#&gt; • `log_remove_connector.ConnectorFS()`</span></span>
+<span id="cb3-13"><a href="#cb3-13" tabindex="-1"></a><span class="co">#&gt; • `log_write_connector.ConnectorFS()`</span></span>
+<span id="cb3-14"><a href="#cb3-14" tabindex="-1"></a><span class="co">#&gt; • `read_cnt.ConnectorFS()`</span></span>
+<span id="cb3-15"><a href="#cb3-15" tabindex="-1"></a><span class="co">#&gt; • `remove_cnt.ConnectorFS()`</span></span>
+<span id="cb3-16"><a href="#cb3-16" tabindex="-1"></a><span class="co">#&gt; • `remove_directory_cnt.ConnectorFS()`</span></span>
+<span id="cb3-17"><a href="#cb3-17" tabindex="-1"></a><span class="co">#&gt; • `tbl_cnt.ConnectorFS()`</span></span>
+<span id="cb3-18"><a href="#cb3-18" tabindex="-1"></a><span class="co">#&gt; • `upload_cnt.ConnectorFS()`</span></span>
+<span id="cb3-19"><a href="#cb3-19" tabindex="-1"></a><span class="co">#&gt; • `upload_directory_cnt.ConnectorFS()`</span></span>
+<span id="cb3-20"><a href="#cb3-20" tabindex="-1"></a><span class="co">#&gt; • `write_cnt.ConnectorFS()`</span></span>
+<span id="cb3-21"><a href="#cb3-21" tabindex="-1"></a><span class="co">#&gt; Specifications:</span></span>
+<span id="cb3-22"><a href="#cb3-22" tabindex="-1"></a><span class="co">#&gt; • path:</span></span>
+<span id="cb3-23"><a href="#cb3-23" tabindex="-1"></a><span class="co">#&gt;   /var/folders/kv/q2rqqp3s0s5f9rxn_854l2lm0000gp/T//RtmpA6HW24/file300d6b660cc9/my_root_path/my_project</span></span>
+<span id="cb3-24"><a href="#cb3-24" tabindex="-1"></a><span class="co">#&gt; • project: my_project</span></span></code></pre></div>
+<p>We can now use this <code>connector</code> to read and write data,
+just as we would with <code>ConnectorFS</code>:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a><span class="co"># First list current content:</span></span>
+<span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a>my_project <span class="sc">|&gt;</span></span>
+<span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a>  <span class="fu">list_content_cnt</span>()</span>
+<span id="cb4-4"><a href="#cb4-4" tabindex="-1"></a><span class="co">#&gt; character(0)</span></span>
+<span id="cb4-5"><a href="#cb4-5" tabindex="-1"></a></span>
+<span id="cb4-6"><a href="#cb4-6" tabindex="-1"></a><span class="co"># Write some content:</span></span>
+<span id="cb4-7"><a href="#cb4-7" tabindex="-1"></a>my_project <span class="sc">|&gt;</span></span>
+<span id="cb4-8"><a href="#cb4-8" tabindex="-1"></a>  <span class="fu">write_cnt</span>(<span class="st">&quot;Hello world!&quot;</span>, <span class="st">&quot;my_file.txt&quot;</span>)</span>
+<span id="cb4-9"><a href="#cb4-9" tabindex="-1"></a></span>
+<span id="cb4-10"><a href="#cb4-10" tabindex="-1"></a><span class="co"># List content again:</span></span>
+<span id="cb4-11"><a href="#cb4-11" tabindex="-1"></a>my_project <span class="sc">|&gt;</span></span>
+<span id="cb4-12"><a href="#cb4-12" tabindex="-1"></a>  <span class="fu">list_content_cnt</span>()</span>
+<span id="cb4-13"><a href="#cb4-13" tabindex="-1"></a><span class="co">#&gt; [1] &quot;my_file.txt&quot;</span></span>
+<span id="cb4-14"><a href="#cb4-14" tabindex="-1"></a></span>
+<span id="cb4-15"><a href="#cb4-15" tabindex="-1"></a><span class="co"># Read the content:</span></span>
+<span id="cb4-16"><a href="#cb4-16" tabindex="-1"></a>my_project <span class="sc">|&gt;</span></span>
+<span id="cb4-17"><a href="#cb4-17" tabindex="-1"></a>  <span class="fu">read_cnt</span>(<span class="st">&quot;my_file.txt&quot;</span>)</span>
+<span id="cb4-18"><a href="#cb4-18" tabindex="-1"></a><span class="co">#&gt; [1] &quot;Hello world!&quot;</span></span></code></pre></div>
+</div>
+<div id="create-custom-generic-method" class="section level2">
+<h2>Create custom generic method</h2>
+<p>All <code>connector</code>generics such as
+<code>list_content_cnt()</code>, <code>read_cnt()</code>, and
+<code>write_cnt()</code> are S3 generics. This means that you can create
+custom methods for your new connector class, and they will be used when
+the generic is called, instead of the one associated with the parent
+class.</p>
+<p>To illustrate this we can take a look at the
+<code>list_content_cnt()</code> generic:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a><span class="co"># Print the generic</span></span>
+<span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a><span class="fu">print</span>(list_content_cnt)</span>
+<span id="cb5-3"><a href="#cb5-3" tabindex="-1"></a><span class="co">#&gt; function (connector_object, ...) </span></span>
+<span id="cb5-4"><a href="#cb5-4" tabindex="-1"></a><span class="co">#&gt; {</span></span>
+<span id="cb5-5"><a href="#cb5-5" tabindex="-1"></a><span class="co">#&gt;     UseMethod(&quot;list_content_cnt&quot;)</span></span>
+<span id="cb5-6"><a href="#cb5-6" tabindex="-1"></a><span class="co">#&gt; }</span></span>
+<span id="cb5-7"><a href="#cb5-7" tabindex="-1"></a><span class="co">#&gt; &lt;bytecode: 0x110b8f0a8&gt;</span></span>
+<span id="cb5-8"><a href="#cb5-8" tabindex="-1"></a><span class="co">#&gt; &lt;environment: namespace:connector&gt;</span></span>
+<span id="cb5-9"><a href="#cb5-9" tabindex="-1"></a></span>
+<span id="cb5-10"><a href="#cb5-10" tabindex="-1"></a><span class="co"># List the registered s3 methods</span></span>
+<span id="cb5-11"><a href="#cb5-11" tabindex="-1"></a><span class="fu">methods</span>(<span class="st">&quot;list_content_cnt&quot;</span>) <span class="sc">|&gt;</span></span>
+<span id="cb5-12"><a href="#cb5-12" tabindex="-1"></a>  <span class="fu">cat</span>(<span class="at">sep =</span> <span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span>)</span>
+<span id="cb5-13"><a href="#cb5-13" tabindex="-1"></a><span class="co">#&gt; list_content_cnt.ConnectorDBI</span></span>
+<span id="cb5-14"><a href="#cb5-14" tabindex="-1"></a><span class="co">#&gt; list_content_cnt.ConnectorFS</span></span>
+<span id="cb5-15"><a href="#cb5-15" tabindex="-1"></a><span class="co">#&gt; list_content_cnt.ConnectorLogger</span></span>
+<span id="cb5-16"><a href="#cb5-16" tabindex="-1"></a><span class="co">#&gt; list_content_cnt.default</span></span></code></pre></div>
+<p>Building further on the example below we can define a custom method
+for <code>list_content_cnt()</code> for the
+<code>connector_project</code> class, to be used instead of
+<code>list_content_cnt.ConnectorFS</code>:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a>list_content_cnt.connector_project <span class="ot">&lt;-</span> <span class="cf">function</span>(connector_object, ...) {</span>
+<span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a>  cli<span class="sc">::</span><span class="fu">cli_alert</span>(<span class="st">&quot;Listing content of {connector_object$project}&quot;</span>)</span>
+<span id="cb6-3"><a href="#cb6-3" tabindex="-1"></a>  <span class="fu">NextMethod</span>()</span>
+<span id="cb6-4"><a href="#cb6-4" tabindex="-1"></a>}</span></code></pre></div>
+<p>This is of course a very simple example, that just prints a message
+before calling the <code>ConnectorFS</code> method.</p>
+<p>We can now see that this method is available and that is it
+associated with the <code>connector_project</code> class:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a><span class="co"># List methods again</span></span>
+<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a><span class="fu">methods</span>(<span class="st">&quot;list_content_cnt&quot;</span>) <span class="sc">|&gt;</span></span>
+<span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a>  <span class="fu">cat</span>(<span class="at">sep =</span> <span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span>)</span>
+<span id="cb7-4"><a href="#cb7-4" tabindex="-1"></a><span class="co">#&gt; list_content_cnt.ConnectorDBI</span></span>
+<span id="cb7-5"><a href="#cb7-5" tabindex="-1"></a><span class="co">#&gt; list_content_cnt.ConnectorFS</span></span>
+<span id="cb7-6"><a href="#cb7-6" tabindex="-1"></a><span class="co">#&gt; list_content_cnt.ConnectorLogger</span></span>
+<span id="cb7-7"><a href="#cb7-7" tabindex="-1"></a><span class="co">#&gt; list_content_cnt.connector_project</span></span>
+<span id="cb7-8"><a href="#cb7-8" tabindex="-1"></a><span class="co">#&gt; list_content_cnt.default</span></span>
+<span id="cb7-9"><a href="#cb7-9" tabindex="-1"></a></span>
+<span id="cb7-10"><a href="#cb7-10" tabindex="-1"></a><span class="co"># Print my_project connector to see associated methods</span></span>
+<span id="cb7-11"><a href="#cb7-11" tabindex="-1"></a><span class="fu">print</span>(my_project)</span>
+<span id="cb7-12"><a href="#cb7-12" tabindex="-1"></a><span class="co">#&gt; &lt;connector_project/ConnectorFS&gt;</span></span>
+<span id="cb7-13"><a href="#cb7-13" tabindex="-1"></a><span class="co">#&gt; Inherits from: &lt;Connector&gt;</span></span>
+<span id="cb7-14"><a href="#cb7-14" tabindex="-1"></a><span class="co">#&gt; Registered methods:</span></span>
+<span id="cb7-15"><a href="#cb7-15" tabindex="-1"></a><span class="co">#&gt; • `list_content_cnt.connector_project()`</span></span>
+<span id="cb7-16"><a href="#cb7-16" tabindex="-1"></a><span class="co">#&gt; • `create_directory_cnt.ConnectorFS()`</span></span>
+<span id="cb7-17"><a href="#cb7-17" tabindex="-1"></a><span class="co">#&gt; • `download_cnt.ConnectorFS()`</span></span>
+<span id="cb7-18"><a href="#cb7-18" tabindex="-1"></a><span class="co">#&gt; • `download_directory_cnt.ConnectorFS()`</span></span>
+<span id="cb7-19"><a href="#cb7-19" tabindex="-1"></a><span class="co">#&gt; • `log_read_connector.ConnectorFS()`</span></span>
+<span id="cb7-20"><a href="#cb7-20" tabindex="-1"></a><span class="co">#&gt; • `log_remove_connector.ConnectorFS()`</span></span>
+<span id="cb7-21"><a href="#cb7-21" tabindex="-1"></a><span class="co">#&gt; • `log_write_connector.ConnectorFS()`</span></span>
+<span id="cb7-22"><a href="#cb7-22" tabindex="-1"></a><span class="co">#&gt; • `read_cnt.ConnectorFS()`</span></span>
+<span id="cb7-23"><a href="#cb7-23" tabindex="-1"></a><span class="co">#&gt; • `remove_cnt.ConnectorFS()`</span></span>
+<span id="cb7-24"><a href="#cb7-24" tabindex="-1"></a><span class="co">#&gt; • `remove_directory_cnt.ConnectorFS()`</span></span>
+<span id="cb7-25"><a href="#cb7-25" tabindex="-1"></a><span class="co">#&gt; • `tbl_cnt.ConnectorFS()`</span></span>
+<span id="cb7-26"><a href="#cb7-26" tabindex="-1"></a><span class="co">#&gt; • `upload_cnt.ConnectorFS()`</span></span>
+<span id="cb7-27"><a href="#cb7-27" tabindex="-1"></a><span class="co">#&gt; • `upload_directory_cnt.ConnectorFS()`</span></span>
+<span id="cb7-28"><a href="#cb7-28" tabindex="-1"></a><span class="co">#&gt; • `write_cnt.ConnectorFS()`</span></span>
+<span id="cb7-29"><a href="#cb7-29" tabindex="-1"></a><span class="co">#&gt; Specifications:</span></span>
+<span id="cb7-30"><a href="#cb7-30" tabindex="-1"></a><span class="co">#&gt; • path:</span></span>
+<span id="cb7-31"><a href="#cb7-31" tabindex="-1"></a><span class="co">#&gt;   /var/folders/kv/q2rqqp3s0s5f9rxn_854l2lm0000gp/T//RtmpA6HW24/file300d6b660cc9/my_root_path/my_project</span></span>
+<span id="cb7-32"><a href="#cb7-32" tabindex="-1"></a><span class="co">#&gt; • project: my_project</span></span></code></pre></div>
+<p>And when we use <code>list_content_cnt()</code> on our
+<code>my_project</code> object, we see that the custom method is used
+and we get the message:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a>my_project <span class="sc">|&gt;</span></span>
+<span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a>  <span class="fu">list_content_cnt</span>()</span>
+<span id="cb8-3"><a href="#cb8-3" tabindex="-1"></a><span class="co">#&gt; → Listing content of my_project</span></span>
+<span id="cb8-4"><a href="#cb8-4" tabindex="-1"></a><span class="co">#&gt; [1] &quot;my_file.txt&quot;</span></span></code></pre></div>
+</div>
+<div id="use-extra-class-for-simple-customization" class="section level2">
+<h2>Use extra class for simple customization</h2>
+<p>If you as above just want to slightly tweak the behavior of an
+existing functionality an alternative solution is to use the
+<code>extra_class</code> argument when initializing of the
+connector.</p>
+<p>This argument adds the <code>extra_class</code> as the first class of
+the creating the connector, meaning that for any generic dispatch, such
+as of <code>list_content_cnt()</code>, a method for this class will be
+used before any of the connector classes.</p>
+<p>To redo the two examples above we make a new <code>ConnectorFS</code>
+with the extra class <code>demo_extra</code>:</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" tabindex="-1"></a>my_project_extra <span class="ot">&lt;-</span> ConnectorFS<span class="sc">$</span><span class="fu">new</span>(</span>
+<span id="cb9-2"><a href="#cb9-2" tabindex="-1"></a>  <span class="at">path =</span> <span class="fu">file.path</span>(tmp, <span class="st">&quot;my_root_path&quot;</span>, <span class="st">&quot;my_project&quot;</span>),</span>
+<span id="cb9-3"><a href="#cb9-3" tabindex="-1"></a>  <span class="at">extra_class =</span> <span class="st">&quot;my_extra_class&quot;</span></span>
+<span id="cb9-4"><a href="#cb9-4" tabindex="-1"></a>)</span>
+<span id="cb9-5"><a href="#cb9-5" tabindex="-1"></a></span>
+<span id="cb9-6"><a href="#cb9-6" tabindex="-1"></a><span class="fu">print</span>(my_project_extra)</span>
+<span id="cb9-7"><a href="#cb9-7" tabindex="-1"></a><span class="co">#&gt; &lt;my_extra_class/ConnectorFS&gt;</span></span>
+<span id="cb9-8"><a href="#cb9-8" tabindex="-1"></a><span class="co">#&gt; Inherits from: &lt;Connector&gt;</span></span>
+<span id="cb9-9"><a href="#cb9-9" tabindex="-1"></a><span class="co">#&gt; Registered methods:</span></span>
+<span id="cb9-10"><a href="#cb9-10" tabindex="-1"></a><span class="co">#&gt; • `create_directory_cnt.ConnectorFS()`</span></span>
+<span id="cb9-11"><a href="#cb9-11" tabindex="-1"></a><span class="co">#&gt; • `download_cnt.ConnectorFS()`</span></span>
+<span id="cb9-12"><a href="#cb9-12" tabindex="-1"></a><span class="co">#&gt; • `download_directory_cnt.ConnectorFS()`</span></span>
+<span id="cb9-13"><a href="#cb9-13" tabindex="-1"></a><span class="co">#&gt; • `list_content_cnt.ConnectorFS()`</span></span>
+<span id="cb9-14"><a href="#cb9-14" tabindex="-1"></a><span class="co">#&gt; • `log_read_connector.ConnectorFS()`</span></span>
+<span id="cb9-15"><a href="#cb9-15" tabindex="-1"></a><span class="co">#&gt; • `log_remove_connector.ConnectorFS()`</span></span>
+<span id="cb9-16"><a href="#cb9-16" tabindex="-1"></a><span class="co">#&gt; • `log_write_connector.ConnectorFS()`</span></span>
+<span id="cb9-17"><a href="#cb9-17" tabindex="-1"></a><span class="co">#&gt; • `read_cnt.ConnectorFS()`</span></span>
+<span id="cb9-18"><a href="#cb9-18" tabindex="-1"></a><span class="co">#&gt; • `remove_cnt.ConnectorFS()`</span></span>
+<span id="cb9-19"><a href="#cb9-19" tabindex="-1"></a><span class="co">#&gt; • `remove_directory_cnt.ConnectorFS()`</span></span>
+<span id="cb9-20"><a href="#cb9-20" tabindex="-1"></a><span class="co">#&gt; • `tbl_cnt.ConnectorFS()`</span></span>
+<span id="cb9-21"><a href="#cb9-21" tabindex="-1"></a><span class="co">#&gt; • `upload_cnt.ConnectorFS()`</span></span>
+<span id="cb9-22"><a href="#cb9-22" tabindex="-1"></a><span class="co">#&gt; • `upload_directory_cnt.ConnectorFS()`</span></span>
+<span id="cb9-23"><a href="#cb9-23" tabindex="-1"></a><span class="co">#&gt; • `write_cnt.ConnectorFS()`</span></span>
+<span id="cb9-24"><a href="#cb9-24" tabindex="-1"></a><span class="co">#&gt; Specifications:</span></span>
+<span id="cb9-25"><a href="#cb9-25" tabindex="-1"></a><span class="co">#&gt; • path:</span></span>
+<span id="cb9-26"><a href="#cb9-26" tabindex="-1"></a><span class="co">#&gt;   /var/folders/kv/q2rqqp3s0s5f9rxn_854l2lm0000gp/T//RtmpA6HW24/file300d6b660cc9/my_root_path/my_project</span></span></code></pre></div>
+<p>As you can see here we have all the methods from
+<code>ConnectorFS</code>, but the <code>demo_extra</code> is now the
+first class in the class hierarchy.</p>
+<p>To create a custom method for <code>list_content_cnt()</code> for the
+<code>demo_extra</code> we do the same as for the
+<code>connector_project</code> above:</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" tabindex="-1"></a>list_content_cnt.my_extra_class <span class="ot">&lt;-</span> <span class="cf">function</span>(connector_object, ...) {</span>
+<span id="cb10-2"><a href="#cb10-2" tabindex="-1"></a>  cli<span class="sc">::</span><span class="fu">cli_alert</span>(<span class="st">&quot;Listing content of {connector_object$path}&quot;</span>)</span>
+<span id="cb10-3"><a href="#cb10-3" tabindex="-1"></a>  <span class="fu">NextMethod</span>()</span>
+<span id="cb10-4"><a href="#cb10-4" tabindex="-1"></a>}</span></code></pre></div>
+<p>The project information is of course not available now, so we just
+print the path instead, but otherwise everything is the same:</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" tabindex="-1"></a><span class="co"># List methods</span></span>
+<span id="cb11-2"><a href="#cb11-2" tabindex="-1"></a><span class="fu">methods</span>(<span class="st">&quot;list_content_cnt&quot;</span>)</span>
+<span id="cb11-3"><a href="#cb11-3" tabindex="-1"></a><span class="co">#&gt; [1] list_content_cnt.ConnectorDBI*     list_content_cnt.ConnectorFS*     </span></span>
+<span id="cb11-4"><a href="#cb11-4" tabindex="-1"></a><span class="co">#&gt; [3] list_content_cnt.ConnectorLogger*  list_content_cnt.connector_project</span></span>
+<span id="cb11-5"><a href="#cb11-5" tabindex="-1"></a><span class="co">#&gt; [5] list_content_cnt.default*          list_content_cnt.my_extra_class   </span></span>
+<span id="cb11-6"><a href="#cb11-6" tabindex="-1"></a><span class="co">#&gt; see &#39;?methods&#39; for accessing help and source code</span></span>
+<span id="cb11-7"><a href="#cb11-7" tabindex="-1"></a></span>
+<span id="cb11-8"><a href="#cb11-8" tabindex="-1"></a><span class="co"># Print my_project_extra connector to see associated methods</span></span>
+<span id="cb11-9"><a href="#cb11-9" tabindex="-1"></a><span class="fu">print</span>(my_project_extra)</span>
+<span id="cb11-10"><a href="#cb11-10" tabindex="-1"></a><span class="co">#&gt; &lt;my_extra_class/ConnectorFS&gt;</span></span>
+<span id="cb11-11"><a href="#cb11-11" tabindex="-1"></a><span class="co">#&gt; Inherits from: &lt;Connector&gt;</span></span>
+<span id="cb11-12"><a href="#cb11-12" tabindex="-1"></a><span class="co">#&gt; Registered methods:</span></span>
+<span id="cb11-13"><a href="#cb11-13" tabindex="-1"></a><span class="co">#&gt; • `list_content_cnt.my_extra_class()`</span></span>
+<span id="cb11-14"><a href="#cb11-14" tabindex="-1"></a><span class="co">#&gt; • `create_directory_cnt.ConnectorFS()`</span></span>
+<span id="cb11-15"><a href="#cb11-15" tabindex="-1"></a><span class="co">#&gt; • `download_cnt.ConnectorFS()`</span></span>
+<span id="cb11-16"><a href="#cb11-16" tabindex="-1"></a><span class="co">#&gt; • `download_directory_cnt.ConnectorFS()`</span></span>
+<span id="cb11-17"><a href="#cb11-17" tabindex="-1"></a><span class="co">#&gt; • `log_read_connector.ConnectorFS()`</span></span>
+<span id="cb11-18"><a href="#cb11-18" tabindex="-1"></a><span class="co">#&gt; • `log_remove_connector.ConnectorFS()`</span></span>
+<span id="cb11-19"><a href="#cb11-19" tabindex="-1"></a><span class="co">#&gt; • `log_write_connector.ConnectorFS()`</span></span>
+<span id="cb11-20"><a href="#cb11-20" tabindex="-1"></a><span class="co">#&gt; • `read_cnt.ConnectorFS()`</span></span>
+<span id="cb11-21"><a href="#cb11-21" tabindex="-1"></a><span class="co">#&gt; • `remove_cnt.ConnectorFS()`</span></span>
+<span id="cb11-22"><a href="#cb11-22" tabindex="-1"></a><span class="co">#&gt; • `remove_directory_cnt.ConnectorFS()`</span></span>
+<span id="cb11-23"><a href="#cb11-23" tabindex="-1"></a><span class="co">#&gt; • `tbl_cnt.ConnectorFS()`</span></span>
+<span id="cb11-24"><a href="#cb11-24" tabindex="-1"></a><span class="co">#&gt; • `upload_cnt.ConnectorFS()`</span></span>
+<span id="cb11-25"><a href="#cb11-25" tabindex="-1"></a><span class="co">#&gt; • `upload_directory_cnt.ConnectorFS()`</span></span>
+<span id="cb11-26"><a href="#cb11-26" tabindex="-1"></a><span class="co">#&gt; • `write_cnt.ConnectorFS()`</span></span>
+<span id="cb11-27"><a href="#cb11-27" tabindex="-1"></a><span class="co">#&gt; Specifications:</span></span>
+<span id="cb11-28"><a href="#cb11-28" tabindex="-1"></a><span class="co">#&gt; • path:</span></span>
+<span id="cb11-29"><a href="#cb11-29" tabindex="-1"></a><span class="co">#&gt;   /var/folders/kv/q2rqqp3s0s5f9rxn_854l2lm0000gp/T//RtmpA6HW24/file300d6b660cc9/my_root_path/my_project</span></span>
+<span id="cb11-30"><a href="#cb11-30" tabindex="-1"></a></span>
+<span id="cb11-31"><a href="#cb11-31" tabindex="-1"></a><span class="co"># List content to see the new message</span></span>
+<span id="cb11-32"><a href="#cb11-32" tabindex="-1"></a>my_project_extra <span class="sc">|&gt;</span></span>
+<span id="cb11-33"><a href="#cb11-33" tabindex="-1"></a>  <span class="fu">list_content_cnt</span>()</span>
+<span id="cb11-34"><a href="#cb11-34" tabindex="-1"></a><span class="co">#&gt; → Listing content of /var/folders/kv/q2rqqp3s0s5f9rxn_854l2lm0000gp/T//RtmpA6HW24/file300d6b660cc9/my_root_path/my_project</span></span>
+<span id="cb11-35"><a href="#cb11-35" tabindex="-1"></a><span class="co">#&gt; [1] &quot;my_file.txt&quot;</span></span></code></pre></div>
+</div>
+<div id="special-handling-of-files" class="section level2">
+<h2>Special handling of files</h2>
+<p>A special property of file storage connectors (inheriting from
+<code>ConnectorFS</code>) is that they are operating on files not on
+databases. This means that they can handle multiple file formats, and
+also not only file formats for reading and writing rectangular data.</p>
+<p>When handling files the user will only use the
+<code>read_cnt()</code> and <code>write_cnt()</code> generics, but
+behind the scenes the following chain of functions are called:</p>
+<ul>
+<li><code>read_cnt()</code> –&gt; <code>read_file()</code> –&gt;
+<code>read_ext()</code> –&gt; External read function</li>
+<li><code>write_cnt()</code> –&gt; <code>write_file()</code> –&gt;
+<code>write_ext()</code> –&gt; External write function</li>
+</ul>
+<p>Here <code>read_cnt()</code> dispatches based on the class of the
+<code>Connector</code> object. For the file storage connectors
+(inheriting from <code>ConnectorFS</code>) the <code>read_file()</code>
+method is then called on the path of the file.</p>
+<p><code>read_file()</code> here is only a helper function, that then
+calls <code>read_ext()</code> which is a generic that dispatches based
+on file extension of the file, and uses general functions from other
+packages to read the file. As an example any file with the extension
+<code>.csv</code> will be read using <code>readr::read_csv()</code>.</p>
+<p>The same logic applies to <code>write_cnt()</code>.</p>
+<div id="add-new-file-format" class="section level3">
+<h3>Add new file format</h3>
+<p>The currently supported file types can be seen in reference of the
+<code>read_cnt()</code> and <code>write_cnt()</code> functions
+respectively.</p>
+<p>But let us imagine we want to support a new imaginary file format
+<code>myformat</code>. In order to this all we need to do is to create
+the appropriate <code>read_ext()</code> and <code>write_ext()</code>
+methods:</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" tabindex="-1"></a>read_ext.myformat <span class="ot">&lt;-</span> <span class="cf">function</span>(path, ...) {</span>
+<span id="cb12-2"><a href="#cb12-2" tabindex="-1"></a>  cli<span class="sc">::</span><span class="fu">cli_alert</span>(<span class="st">&quot;Reading myformat file&quot;</span>)</span>
+<span id="cb12-3"><a href="#cb12-3" tabindex="-1"></a>  <span class="fu">readLines</span>(<span class="at">con =</span> path)</span>
+<span id="cb12-4"><a href="#cb12-4" tabindex="-1"></a>}</span>
+<span id="cb12-5"><a href="#cb12-5" tabindex="-1"></a></span>
+<span id="cb12-6"><a href="#cb12-6" tabindex="-1"></a>write_ext.myformat <span class="ot">&lt;-</span> <span class="cf">function</span>(file, x, ...) {</span>
+<span id="cb12-7"><a href="#cb12-7" tabindex="-1"></a>  cli<span class="sc">::</span><span class="fu">cli_alert</span>(<span class="st">&quot;Writing myformat file&quot;</span>)</span>
+<span id="cb12-8"><a href="#cb12-8" tabindex="-1"></a>  <span class="fu">writeLines</span>(<span class="at">text =</span> x, <span class="at">con =</span> file)</span>
+<span id="cb12-9"><a href="#cb12-9" tabindex="-1"></a>}</span></code></pre></div>
+<p>And we can now use them to write and read our new file format with
+out existing <code>my_project</code> connector:</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" tabindex="-1"></a><span class="co"># List already existing content:</span></span>
+<span id="cb13-2"><a href="#cb13-2" tabindex="-1"></a>my_project <span class="sc">|&gt;</span></span>
+<span id="cb13-3"><a href="#cb13-3" tabindex="-1"></a>  <span class="fu">list_content_cnt</span>()</span>
+<span id="cb13-4"><a href="#cb13-4" tabindex="-1"></a><span class="co">#&gt; → Listing content of my_project</span></span>
+<span id="cb13-5"><a href="#cb13-5" tabindex="-1"></a><span class="co">#&gt; [1] &quot;my_file.txt&quot;</span></span>
+<span id="cb13-6"><a href="#cb13-6" tabindex="-1"></a></span>
+<span id="cb13-7"><a href="#cb13-7" tabindex="-1"></a><span class="co"># Write some content in myformat:</span></span>
+<span id="cb13-8"><a href="#cb13-8" tabindex="-1"></a>my_project <span class="sc">|&gt;</span></span>
+<span id="cb13-9"><a href="#cb13-9" tabindex="-1"></a>  <span class="fu">write_cnt</span>(<span class="st">&quot;Hello new format!&quot;</span>, <span class="st">&quot;new_file.myformat&quot;</span>)</span>
+<span id="cb13-10"><a href="#cb13-10" tabindex="-1"></a><span class="co">#&gt; → Writing myformat file</span></span>
+<span id="cb13-11"><a href="#cb13-11" tabindex="-1"></a></span>
+<span id="cb13-12"><a href="#cb13-12" tabindex="-1"></a><span class="co"># List content again:</span></span>
+<span id="cb13-13"><a href="#cb13-13" tabindex="-1"></a>my_project <span class="sc">|&gt;</span></span>
+<span id="cb13-14"><a href="#cb13-14" tabindex="-1"></a>  <span class="fu">list_content_cnt</span>()</span>
+<span id="cb13-15"><a href="#cb13-15" tabindex="-1"></a><span class="co">#&gt; → Listing content of my_project</span></span>
+<span id="cb13-16"><a href="#cb13-16" tabindex="-1"></a><span class="co">#&gt; [1] &quot;my_file.txt&quot;       &quot;new_file.myformat&quot;</span></span>
+<span id="cb13-17"><a href="#cb13-17" tabindex="-1"></a></span>
+<span id="cb13-18"><a href="#cb13-18" tabindex="-1"></a><span class="co"># Read the content:</span></span>
+<span id="cb13-19"><a href="#cb13-19" tabindex="-1"></a>my_project <span class="sc">|&gt;</span></span>
+<span id="cb13-20"><a href="#cb13-20" tabindex="-1"></a>  <span class="fu">read_cnt</span>(<span class="st">&quot;new_file.myformat&quot;</span>)</span>
+<span id="cb13-21"><a href="#cb13-21" tabindex="-1"></a><span class="co">#&gt; → Reading myformat file</span></span>
+<span id="cb13-22"><a href="#cb13-22" tabindex="-1"></a><span class="co">#&gt; [1] &quot;Hello new format!&quot;</span></span></code></pre></div>
+</div>
+</div>
+
+
+
+<!-- code folding -->
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>
