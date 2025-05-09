@@ -394,8 +394,8 @@ must be provided</li>
 <p>Here is an example of a configuration file with different types of
 connections:</p>
 <pre><code>metadata:
-  trial: &quot;yyyy&quot;
-  project: &quot;nnxxxx&quot;
+  trial: &quot;my_trial&quot;
+  project: &quot;my_project&quot;
   instance: &quot;current&quot;
   http_path:  !!expr Sys.getenv(&quot;DATABRICKS_HTTP_PATH&quot;)
   catalog:  !!expr Sys.getenv(&quot;DATABRICKS_CATALOG_NAME&quot;)
@@ -541,7 +541,7 @@ in different formats.</p>
 <span id="cb6-31"><a href="#cb6-31" tabindex="-1"></a>  <span class="fu">geom_point</span>()</span>
 <span id="cb6-32"><a href="#cb6-32" tabindex="-1"></a></span>
 <span id="cb6-33"><a href="#cb6-33" tabindex="-1"></a><span class="do">## Using Databricks Volumes</span></span>
-<span id="cb6-34"><a href="#cb6-34" tabindex="-1"></a><span class="do">## Store Tfls</span></span>
+<span id="cb6-34"><a href="#cb6-34" tabindex="-1"></a><span class="do">## Store TFLs</span></span>
 <span id="cb6-35"><a href="#cb6-35" tabindex="-1"></a>db<span class="sc">$</span>tfl<span class="sc">$</span><span class="fu">write_cnt</span>(fsetosa<span class="sc">$</span>data, <span class="st">&quot;fsetosa.csv&quot;</span>)</span>
 <span id="cb6-36"><a href="#cb6-36" tabindex="-1"></a>db<span class="sc">$</span>tfl<span class="sc">$</span><span class="fu">write_cnt</span>(fsetosa, <span class="st">&quot;fsetosa.rds&quot;</span>)</span>
 <span id="cb6-37"><a href="#cb6-37" tabindex="-1"></a></span>
@@ -559,20 +559,8 @@ in different formats.</p>
 <code>connector</code> package works. We will use the configuration file
 provided below, which will only use file system as type of connection
 for ADaM and TFL data.</p>
-<pre><code>metadata:
-  adam_path: !expr file.path(tempdir(), &quot;adam&quot;)
-  tfl_path: !expr file.path(tempdir(), &quot;tfl&quot;)
-
-datasources:
-  - name: &quot;adam&quot;
-    backend:
-      type: &quot;connector::connector_fs&quot;
-      path: &quot;{metadata.adam_path}&quot;
-  - name: &quot;tfl&quot;
-    backend:
-      type: &quot;connector::connector_fs&quot;
-      path: &quot;{metadata.tfl_path}&quot;
-</code></pre>
+<p><code>_connector.yml:</code></p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a><span class="at">metadata</span><span class="fu">:,   adam_path</span><span class="kw">:</span><span class="at"> !expr file.path(getwd(), &quot;adam&quot;),   tfl_path: !expr file.path(getwd(), &quot;tfl&quot;), , datasources:,   - name: &quot;adam&quot;,     backend:,       type: &quot;connector::connector_fs&quot;,       path: &quot;{metadata.adam_path}&quot;,   - name: &quot;tfl&quot;,     backend:,       type: &quot;connector::connector_fs&quot;,       path: &quot;{metadata.tfl_path}&quot;, </span></span></code></pre></div>
 <p>Now, let’s run the example:</p>
 <div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a><span class="fu">library</span>(connector)</span>
 <span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a><span class="fu">library</span>(dplyr)</span>
@@ -586,68 +574,65 @@ datasources:
 <span id="cb8-10"><a href="#cb8-10" tabindex="-1"></a><span class="co">#&gt;     intersect, setdiff, setequal, union</span></span>
 <span id="cb8-11"><a href="#cb8-11" tabindex="-1"></a><span class="fu">library</span>(ggplot2)</span>
 <span id="cb8-12"><a href="#cb8-12" tabindex="-1"></a></span>
-<span id="cb8-13"><a href="#cb8-13" tabindex="-1"></a><span class="co"># Let&#39;s create ADaM and TFL directories in temporary directory of the session</span></span>
-<span id="cb8-14"><a href="#cb8-14" tabindex="-1"></a><span class="fu">dir.create</span>(<span class="fu">file.path</span>(<span class="fu">tempdir</span>(), <span class="st">&quot;adam&quot;</span>))</span>
-<span id="cb8-15"><a href="#cb8-15" tabindex="-1"></a><span class="fu">dir.create</span>(<span class="fu">file.path</span>(<span class="fu">tempdir</span>(), <span class="st">&quot;tfl&quot;</span>))</span>
+<span id="cb8-13"><a href="#cb8-13" tabindex="-1"></a><span class="co"># Let&#39;s create ADaM and TFL directories</span></span>
+<span id="cb8-14"><a href="#cb8-14" tabindex="-1"></a><span class="fu">dir.create</span>(<span class="st">&quot;adam&quot;</span>)</span>
+<span id="cb8-15"><a href="#cb8-15" tabindex="-1"></a><span class="fu">dir.create</span>(<span class="st">&quot;tfl&quot;</span>)</span>
 <span id="cb8-16"><a href="#cb8-16" tabindex="-1"></a></span>
-<span id="cb8-17"><a href="#cb8-17" tabindex="-1"></a><span class="co"># Get example configuration from file</span></span>
-<span id="cb8-18"><a href="#cb8-18" tabindex="-1"></a>config_file <span class="ot">&lt;-</span> <span class="fu">system.file</span>(<span class="st">&quot;config&quot;</span>, <span class="st">&quot;config_file_system.yml&quot;</span>, <span class="at">package =</span> <span class="st">&quot;connector&quot;</span>)</span>
-<span id="cb8-19"><a href="#cb8-19" tabindex="-1"></a></span>
-<span id="cb8-20"><a href="#cb8-20" tabindex="-1"></a><span class="co"># Load data connections</span></span>
-<span id="cb8-21"><a href="#cb8-21" tabindex="-1"></a>db <span class="ot">&lt;-</span> <span class="fu">connect</span>(<span class="at">config =</span> config_file)</span>
-<span id="cb8-22"><a href="#cb8-22" tabindex="-1"></a><span class="co">#&gt; ────────────────────────────────────────────────────────────────────────────────</span></span>
-<span id="cb8-23"><a href="#cb8-23" tabindex="-1"></a><span class="co">#&gt; Connection to:</span></span>
-<span id="cb8-24"><a href="#cb8-24" tabindex="-1"></a><span class="co">#&gt; → adam</span></span>
-<span id="cb8-25"><a href="#cb8-25" tabindex="-1"></a><span class="co">#&gt; • connector::connector_fs</span></span>
-<span id="cb8-26"><a href="#cb8-26" tabindex="-1"></a><span class="co">#&gt; • /var/folders/kv/q2rqqp3s0s5f9rxn_854l2lm0000gp/T//RtmpA6HW24/adam</span></span>
-<span id="cb8-27"><a href="#cb8-27" tabindex="-1"></a><span class="co">#&gt; ────────────────────────────────────────────────────────────────────────────────</span></span>
-<span id="cb8-28"><a href="#cb8-28" tabindex="-1"></a><span class="co">#&gt; Connection to:</span></span>
-<span id="cb8-29"><a href="#cb8-29" tabindex="-1"></a><span class="co">#&gt; → tfl</span></span>
-<span id="cb8-30"><a href="#cb8-30" tabindex="-1"></a><span class="co">#&gt; • connector::connector_fs</span></span>
-<span id="cb8-31"><a href="#cb8-31" tabindex="-1"></a><span class="co">#&gt; • /var/folders/kv/q2rqqp3s0s5f9rxn_854l2lm0000gp/T//RtmpA6HW24/tfl</span></span>
-<span id="cb8-32"><a href="#cb8-32" tabindex="-1"></a></span>
-<span id="cb8-33"><a href="#cb8-33" tabindex="-1"></a><span class="do">## Iris data</span></span>
-<span id="cb8-34"><a href="#cb8-34" tabindex="-1"></a>setosa <span class="ot">&lt;-</span> iris <span class="sc">|&gt;</span></span>
-<span id="cb8-35"><a href="#cb8-35" tabindex="-1"></a>  <span class="fu">filter</span>(Species <span class="sc">==</span> <span class="st">&quot;setosa&quot;</span>)</span>
-<span id="cb8-36"><a href="#cb8-36" tabindex="-1"></a></span>
-<span id="cb8-37"><a href="#cb8-37" tabindex="-1"></a>mean_for_all_iris <span class="ot">&lt;-</span> iris <span class="sc">|&gt;</span></span>
-<span id="cb8-38"><a href="#cb8-38" tabindex="-1"></a>  <span class="fu">group_by</span>(Species) <span class="sc">|&gt;</span></span>
-<span id="cb8-39"><a href="#cb8-39" tabindex="-1"></a>  <span class="fu">summarise_all</span>(<span class="fu">list</span>(mean, median, sd, min, max))</span>
-<span id="cb8-40"><a href="#cb8-40" tabindex="-1"></a></span>
-<span id="cb8-41"><a href="#cb8-41" tabindex="-1"></a><span class="do">## Store data</span></span>
+<span id="cb8-17"><a href="#cb8-17" tabindex="-1"></a><span class="co"># Load data connections</span></span>
+<span id="cb8-18"><a href="#cb8-18" tabindex="-1"></a>db <span class="ot">&lt;-</span> <span class="fu">connect</span>()</span>
+<span id="cb8-19"><a href="#cb8-19" tabindex="-1"></a><span class="co">#&gt; ────────────────────────────────────────────────────────────────────────────────</span></span>
+<span id="cb8-20"><a href="#cb8-20" tabindex="-1"></a><span class="co">#&gt; Connection to:</span></span>
+<span id="cb8-21"><a href="#cb8-21" tabindex="-1"></a><span class="co">#&gt; → adam</span></span>
+<span id="cb8-22"><a href="#cb8-22" tabindex="-1"></a><span class="co">#&gt; • connector::connector_fs</span></span>
+<span id="cb8-23"><a href="#cb8-23" tabindex="-1"></a><span class="co">#&gt; • /private/var/folders/kv/q2rqqp3s0s5f9rxn_854l2lm0000gp/T/RtmpwxVNQU/file7fc27574147f/adam</span></span>
+<span id="cb8-24"><a href="#cb8-24" tabindex="-1"></a><span class="co">#&gt; ────────────────────────────────────────────────────────────────────────────────</span></span>
+<span id="cb8-25"><a href="#cb8-25" tabindex="-1"></a><span class="co">#&gt; Connection to:</span></span>
+<span id="cb8-26"><a href="#cb8-26" tabindex="-1"></a><span class="co">#&gt; → tfl</span></span>
+<span id="cb8-27"><a href="#cb8-27" tabindex="-1"></a><span class="co">#&gt; • connector::connector_fs</span></span>
+<span id="cb8-28"><a href="#cb8-28" tabindex="-1"></a><span class="co">#&gt; • /private/var/folders/kv/q2rqqp3s0s5f9rxn_854l2lm0000gp/T/RtmpwxVNQU/file7fc27574147f/tfl</span></span>
+<span id="cb8-29"><a href="#cb8-29" tabindex="-1"></a></span>
+<span id="cb8-30"><a href="#cb8-30" tabindex="-1"></a><span class="do">## Iris data</span></span>
+<span id="cb8-31"><a href="#cb8-31" tabindex="-1"></a>setosa <span class="ot">&lt;-</span> iris <span class="sc">|&gt;</span></span>
+<span id="cb8-32"><a href="#cb8-32" tabindex="-1"></a>  <span class="fu">filter</span>(Species <span class="sc">==</span> <span class="st">&quot;setosa&quot;</span>)</span>
+<span id="cb8-33"><a href="#cb8-33" tabindex="-1"></a></span>
+<span id="cb8-34"><a href="#cb8-34" tabindex="-1"></a>mean_for_all_iris <span class="ot">&lt;-</span> iris <span class="sc">|&gt;</span></span>
+<span id="cb8-35"><a href="#cb8-35" tabindex="-1"></a>  <span class="fu">group_by</span>(Species) <span class="sc">|&gt;</span></span>
+<span id="cb8-36"><a href="#cb8-36" tabindex="-1"></a>  <span class="fu">summarise_all</span>(<span class="fu">list</span>(mean, median, sd, min, max))</span>
+<span id="cb8-37"><a href="#cb8-37" tabindex="-1"></a></span>
+<span id="cb8-38"><a href="#cb8-38" tabindex="-1"></a><span class="do">## Store data</span></span>
+<span id="cb8-39"><a href="#cb8-39" tabindex="-1"></a>db<span class="sc">$</span>adam <span class="sc">|&gt;</span></span>
+<span id="cb8-40"><a href="#cb8-40" tabindex="-1"></a>  <span class="fu">write_cnt</span>(setosa, <span class="st">&quot;setosa.rds&quot;</span>)</span>
+<span id="cb8-41"><a href="#cb8-41" tabindex="-1"></a></span>
 <span id="cb8-42"><a href="#cb8-42" tabindex="-1"></a>db<span class="sc">$</span>adam <span class="sc">|&gt;</span></span>
-<span id="cb8-43"><a href="#cb8-43" tabindex="-1"></a>  <span class="fu">write_cnt</span>(setosa, <span class="st">&quot;setosa.rds&quot;</span>)</span>
+<span id="cb8-43"><a href="#cb8-43" tabindex="-1"></a>  <span class="fu">write_cnt</span>(mean_for_all_iris, <span class="st">&quot;mean_iris.rds&quot;</span>)</span>
 <span id="cb8-44"><a href="#cb8-44" tabindex="-1"></a></span>
-<span id="cb8-45"><a href="#cb8-45" tabindex="-1"></a>db<span class="sc">$</span>adam <span class="sc">|&gt;</span></span>
-<span id="cb8-46"><a href="#cb8-46" tabindex="-1"></a>  <span class="fu">write_cnt</span>(mean_for_all_iris, <span class="st">&quot;mean_iris.rds&quot;</span>)</span>
-<span id="cb8-47"><a href="#cb8-47" tabindex="-1"></a></span>
-<span id="cb8-48"><a href="#cb8-48" tabindex="-1"></a><span class="do">## List and load data</span></span>
-<span id="cb8-49"><a href="#cb8-49" tabindex="-1"></a>db<span class="sc">$</span>adam <span class="sc">|&gt;</span></span>
-<span id="cb8-50"><a href="#cb8-50" tabindex="-1"></a>  <span class="fu">list_content_cnt</span>()</span>
-<span id="cb8-51"><a href="#cb8-51" tabindex="-1"></a><span class="co">#&gt; [1] &quot;mean_iris.rds&quot; &quot;setosa.rds&quot;</span></span>
-<span id="cb8-52"><a href="#cb8-52" tabindex="-1"></a></span>
-<span id="cb8-53"><a href="#cb8-53" tabindex="-1"></a><span class="co"># Manipulate data</span></span>
-<span id="cb8-54"><a href="#cb8-54" tabindex="-1"></a>setosa_fsetosa <span class="ot">&lt;-</span> db<span class="sc">$</span>adam <span class="sc">|&gt;</span></span>
-<span id="cb8-55"><a href="#cb8-55" tabindex="-1"></a>  <span class="fu">read_cnt</span>(<span class="st">&quot;setosa&quot;</span>) <span class="sc">|&gt;</span></span>
-<span id="cb8-56"><a href="#cb8-56" tabindex="-1"></a>  <span class="fu">filter</span>(Sepal.Length <span class="sc">&gt;</span> <span class="dv">5</span>)</span>
-<span id="cb8-57"><a href="#cb8-57" tabindex="-1"></a></span>
-<span id="cb8-58"><a href="#cb8-58" tabindex="-1"></a>fsetosa <span class="ot">&lt;-</span> <span class="fu">ggplot</span>(setosa) <span class="sc">+</span></span>
-<span id="cb8-59"><a href="#cb8-59" tabindex="-1"></a>  <span class="fu">aes</span>(<span class="at">x =</span> Sepal.Length, <span class="at">y =</span> Sepal.Width) <span class="sc">+</span></span>
-<span id="cb8-60"><a href="#cb8-60" tabindex="-1"></a>  <span class="fu">geom_point</span>()</span>
-<span id="cb8-61"><a href="#cb8-61" tabindex="-1"></a></span>
-<span id="cb8-62"><a href="#cb8-62" tabindex="-1"></a><span class="do">## Store Tfls</span></span>
-<span id="cb8-63"><a href="#cb8-63" tabindex="-1"></a>db<span class="sc">$</span>tfl<span class="sc">$</span><span class="fu">write_cnt</span>(fsetosa<span class="sc">$</span>data, <span class="st">&quot;fsetosa.csv&quot;</span>)</span>
-<span id="cb8-64"><a href="#cb8-64" tabindex="-1"></a>db<span class="sc">$</span>tfl<span class="sc">$</span><span class="fu">write_cnt</span>(fsetosa, <span class="st">&quot;fsetosa.rds&quot;</span>)</span>
-<span id="cb8-65"><a href="#cb8-65" tabindex="-1"></a></span>
-<span id="cb8-66"><a href="#cb8-66" tabindex="-1"></a><span class="do">## Store images</span></span>
-<span id="cb8-67"><a href="#cb8-67" tabindex="-1"></a>tmp_file <span class="ot">&lt;-</span> <span class="fu">tempfile</span>(<span class="at">fileext =</span> <span class="st">&quot;.png&quot;</span>)</span>
-<span id="cb8-68"><a href="#cb8-68" tabindex="-1"></a><span class="fu">ggsave</span>(tmp_file, fsetosa)</span>
-<span id="cb8-69"><a href="#cb8-69" tabindex="-1"></a><span class="co">#&gt; Saving 3 x 3 in image</span></span>
-<span id="cb8-70"><a href="#cb8-70" tabindex="-1"></a>db<span class="sc">$</span>tfl<span class="sc">$</span><span class="fu">upload_cnt</span>(tmp_file, <span class="st">&quot;fsetosa.png&quot;</span>)</span>
-<span id="cb8-71"><a href="#cb8-71" tabindex="-1"></a></span>
-<span id="cb8-72"><a href="#cb8-72" tabindex="-1"></a><span class="co"># Check if everything is written into temporary TFL directory</span></span>
-<span id="cb8-73"><a href="#cb8-73" tabindex="-1"></a>db<span class="sc">$</span>tfl<span class="sc">$</span><span class="fu">list_content_cnt</span>()</span>
-<span id="cb8-74"><a href="#cb8-74" tabindex="-1"></a><span class="co">#&gt; [1] &quot;fsetosa.csv&quot; &quot;fsetosa.png&quot; &quot;fsetosa.rds&quot;</span></span></code></pre></div>
+<span id="cb8-45"><a href="#cb8-45" tabindex="-1"></a><span class="do">## List and load data</span></span>
+<span id="cb8-46"><a href="#cb8-46" tabindex="-1"></a>db<span class="sc">$</span>adam <span class="sc">|&gt;</span></span>
+<span id="cb8-47"><a href="#cb8-47" tabindex="-1"></a>  <span class="fu">list_content_cnt</span>()</span>
+<span id="cb8-48"><a href="#cb8-48" tabindex="-1"></a><span class="co">#&gt; [1] &quot;mean_iris.rds&quot; &quot;setosa.rds&quot;</span></span>
+<span id="cb8-49"><a href="#cb8-49" tabindex="-1"></a></span>
+<span id="cb8-50"><a href="#cb8-50" tabindex="-1"></a><span class="co"># Manipulate data</span></span>
+<span id="cb8-51"><a href="#cb8-51" tabindex="-1"></a>setosa_fsetosa <span class="ot">&lt;-</span> db<span class="sc">$</span>adam <span class="sc">|&gt;</span></span>
+<span id="cb8-52"><a href="#cb8-52" tabindex="-1"></a>  <span class="fu">read_cnt</span>(<span class="st">&quot;setosa&quot;</span>) <span class="sc">|&gt;</span></span>
+<span id="cb8-53"><a href="#cb8-53" tabindex="-1"></a>  <span class="fu">filter</span>(Sepal.Length <span class="sc">&gt;</span> <span class="dv">5</span>)</span>
+<span id="cb8-54"><a href="#cb8-54" tabindex="-1"></a></span>
+<span id="cb8-55"><a href="#cb8-55" tabindex="-1"></a>fsetosa <span class="ot">&lt;-</span> <span class="fu">ggplot</span>(setosa) <span class="sc">+</span></span>
+<span id="cb8-56"><a href="#cb8-56" tabindex="-1"></a>  <span class="fu">aes</span>(<span class="at">x =</span> Sepal.Length, <span class="at">y =</span> Sepal.Width) <span class="sc">+</span></span>
+<span id="cb8-57"><a href="#cb8-57" tabindex="-1"></a>  <span class="fu">geom_point</span>()</span>
+<span id="cb8-58"><a href="#cb8-58" tabindex="-1"></a></span>
+<span id="cb8-59"><a href="#cb8-59" tabindex="-1"></a><span class="do">## Store TFLs</span></span>
+<span id="cb8-60"><a href="#cb8-60" tabindex="-1"></a>db<span class="sc">$</span>tfl<span class="sc">$</span><span class="fu">write_cnt</span>(fsetosa<span class="sc">$</span>data, <span class="st">&quot;fsetosa.csv&quot;</span>)</span>
+<span id="cb8-61"><a href="#cb8-61" tabindex="-1"></a>db<span class="sc">$</span>tfl<span class="sc">$</span><span class="fu">write_cnt</span>(fsetosa, <span class="st">&quot;fsetosa.rds&quot;</span>)</span>
+<span id="cb8-62"><a href="#cb8-62" tabindex="-1"></a></span>
+<span id="cb8-63"><a href="#cb8-63" tabindex="-1"></a><span class="do">## Store images</span></span>
+<span id="cb8-64"><a href="#cb8-64" tabindex="-1"></a>tmp_file <span class="ot">&lt;-</span> <span class="fu">tempfile</span>(<span class="at">fileext =</span> <span class="st">&quot;.png&quot;</span>)</span>
+<span id="cb8-65"><a href="#cb8-65" tabindex="-1"></a><span class="fu">ggsave</span>(tmp_file, fsetosa)</span>
+<span id="cb8-66"><a href="#cb8-66" tabindex="-1"></a><span class="co">#&gt; Saving 3 x 3 in image</span></span>
+<span id="cb8-67"><a href="#cb8-67" tabindex="-1"></a>db<span class="sc">$</span>tfl<span class="sc">$</span><span class="fu">upload_cnt</span>(tmp_file, <span class="st">&quot;fsetosa.png&quot;</span>)</span>
+<span id="cb8-68"><a href="#cb8-68" tabindex="-1"></a></span>
+<span id="cb8-69"><a href="#cb8-69" tabindex="-1"></a><span class="co"># Check if everything is written into temporary TFL directory</span></span>
+<span id="cb8-70"><a href="#cb8-70" tabindex="-1"></a>db<span class="sc">$</span>tfl<span class="sc">$</span><span class="fu">list_content_cnt</span>()</span>
+<span id="cb8-71"><a href="#cb8-71" tabindex="-1"></a><span class="co">#&gt; [1] &quot;fsetosa.csv&quot; &quot;fsetosa.png&quot; &quot;fsetosa.rds&quot;</span></span></code></pre></div>
 </div>
 <div id="conclusion" class="section level2">
 <h2>Conclusion</h2>

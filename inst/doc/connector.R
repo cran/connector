@@ -105,7 +105,7 @@ knitr::opts_chunk$set(
 #   geom_point()
 # 
 # ## Using Databricks Volumes
-# ## Store Tfls
+# ## Store TFLs
 # db$tfl$write_cnt(fsetosa$data, "fsetosa.csv")
 # db$tfl$write_cnt(fsetosa, "fsetosa.rds")
 # 
@@ -117,20 +117,38 @@ knitr::opts_chunk$set(
 # ## Using Databricks Volumes
 # db$tfl$upload_cnt(contents = tmp_file, file_path = "fsetosa.png")
 
+## ----include = FALSE----------------------------------------------------------
+# Use a temporary directory as working directory for the example below
+tmp <- withr::local_tempdir()
+knitr::opts_knit$set(root.dir = tmp)
+
+## ----include = FALSE----------------------------------------------------------
+'metadata:
+  adam_path: !expr file.path(getwd(), "adam")
+  tfl_path: !expr file.path(getwd(), "tfl")
+
+datasources:
+  - name: "adam"
+    backend:
+      type: "connector::connector_fs"
+      path: "{metadata.adam_path}"
+  - name: "tfl"
+    backend:
+      type: "connector::connector_fs"
+      path: "{metadata.tfl_path}"
+' |> writeLines("_connector.yml")
+
 ## -----------------------------------------------------------------------------
 library(connector)
 library(dplyr)
 library(ggplot2)
 
-# Let's create ADaM and TFL directories in temporary directory of the session
-dir.create(file.path(tempdir(), "adam"))
-dir.create(file.path(tempdir(), "tfl"))
-
-# Get example configuration from file
-config_file <- system.file("config", "config_file_system.yml", package = "connector")
+# Let's create ADaM and TFL directories
+dir.create("adam")
+dir.create("tfl")
 
 # Load data connections
-db <- connect(config = config_file)
+db <- connect()
 
 ## Iris data
 setosa <- iris |>
@@ -160,7 +178,7 @@ fsetosa <- ggplot(setosa) +
   aes(x = Sepal.Length, y = Sepal.Width) +
   geom_point()
 
-## Store Tfls
+## Store TFLs
 db$tfl$write_cnt(fsetosa$data, "fsetosa.csv")
 db$tfl$write_cnt(fsetosa, "fsetosa.rds")
 
