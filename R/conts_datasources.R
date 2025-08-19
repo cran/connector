@@ -10,11 +10,22 @@
 connectors_to_datasources <- function(data) {
   data[-1] |>
     as.list() |>
-    purrr::imap(~ {
-      deparse(.x) |>
-        extract_function_info() |>
-        transform_as_backend(.y)
-    }) |>
+    purrr::imap(
+      ~ {
+        if (is_symbol(.x)) {
+          list(
+            name = as.character(.x),
+            backend = list(
+              type = "NA; R object instead of a call."
+            )
+          )
+        } else {
+          deparse(.x) |>
+            extract_function_info() |>
+            transform_as_backend(.y)
+        }
+      }
+    ) |>
     unname() |>
     transform_as_datasources()
 }
@@ -32,19 +43,18 @@ connectors_to_datasources <- function(data) {
 #'   connect function
 #'
 #' @examples
+#' folder <- withr::local_tempdir("test", .local_envir = .GlobalEnv)
 #'
-#' # Connect to the datasources specified in it
-#' config <- system.file("config", "_connector.yml", package = "connector")
-#' cnts <- connect(config)
+#' cnt <- connectors(fs = connector_fs(folder))
 #'
 #' # Extract the datasources to a config file
 #' yml_file <- tempfile(fileext = ".yml")
-#' write_datasources(cnts, yml_file)
-#'
+#' write_datasources(cnt, yml_file)
+#' # Check the content of the file
+#' cat(readLines(yml_file), sep = "\n")
 #' # Reconnect using the new config file
 #' re_connect <- connect(yml_file)
 #' re_connect
-#'
 #' @export
 write_datasources <- function(connectors, file) {
   checkmate::assert_character(file, null.ok = FALSE, any.missing = FALSE)
@@ -55,7 +65,7 @@ write_datasources <- function(connectors, file) {
   ext <- tools::file_ext(file)
   stopifnot(ext %in% c("yaml", "yml", "json", "rds"))
   ## using our own write function from connector
-  dts <- datasources(connectors)
+  dts <- list_datasources(connectors)
 
   ## Remove class for json to avoid S3 class problem
   if (ext == "json") {
@@ -81,7 +91,9 @@ write_datasources <- function(connectors, file) {
 #' @noRd
 transform_as_backend <- function(infos, name) {
   if (!inherits(infos, "clean_fct_info")) {
-    cli::cli_abort("You should use the extract_function_info function before calling this function")
+    cli::cli_abort(
+      "You should use the extract_function_info function before calling this function"
+    )
   }
 
   bk <- list(
@@ -134,8 +146,8 @@ transform_as_datasources <- function(bks) {
 extract_function_info <- function(func_string) {
   # Parse the function string into an expression
 
-  expr <- parse_expr(func_string)
-  full_func_name <- expr_text(expr[[1]])
+  expr <- rlang::parse_expr(func_string)
+  full_func_name <- rlang::expr_text(expr[[1]])
 
   # Check if it's an R6 class constructor
   is_r6 <- endsWith(full_func_name, "$new")
@@ -247,18 +259,30 @@ get_r6_specific_info <- function(package_name, func_name) {
 #'
 extract_and_process_params <- function(expr, formal_args) {
   # Extract parameters from the function call
-  params <- call_args(expr)
-
+  params <- rlang::call_args(expr)
   # Convert symbols to strings and evaluate expressions
-  params <- purrr::map(params, ~ {
-    if (is_symbol(.x)) {
-      as.character(.x)
-    } else if (is_call(.x)) {
-      as.character(deparse(.x))
-    } else {
-      as.character(.x)
+  params <- purrr::map(
+    params,
+    ~ {
+      if (is_symbol(.x)) {
+        obj <- try(eval(.x), silent = TRUE)
+        if (is.character(obj)) {
+          return(obj)
+        } else {
+          as.character(.x)
+        }
+      } else if (is_call(.x)) {
+        obj <- try(eval(.x), silent = TRUE)
+        if (is.character(obj)) {
+          return(obj)
+        } else {
+          as.character(deparse(.x))
+        }
+      } else {
+        as.character(.x)
+      }
     }
-  })
+  )
 
   # Process parameters based on whether the function uses ... or not
   if (formal_args[1] == "...") {

@@ -51,6 +51,7 @@ Connector <- R6::R6Class(
         any.missing = FALSE,
         null.ok = TRUE
       )
+      validate_resource(self)
       class(self) <- c(extra_class, class(self))
     },
 
@@ -173,4 +174,9 @@ print_cnt <- function(connector_object) {
   )
 
   return(invisible(connector_object))
+}
+
+#' @noRd
+is_connector <- function(connector) {
+  inherits(connector, "Connector")
 }

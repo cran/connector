@@ -9,25 +9,27 @@
 #' @examples
 #' # Create connectors objects
 #'
-#' con <- connectors(
+#' cnts <- connectors(
 #'   sdtm = connector_fs(path = tempdir()),
 #'   adam = connector_dbi(drv = RSQLite::SQLite())
 #' )
 #'
 #' # Print for overview
 #'
-#' con
+#' cnts
 #'
 #' # Print the individual connector for more information
 #'
-#' con$sdtm
+#' cnts$sdtm
 #'
-#' con$adam
+#' cnts$adam
 #'
 #' @export
 connectors <- function(...) {
   x <- rlang::list2(...)
   ds_ <- x[["datasources"]]
+
+  md_ <- if (is.null(x[[".md"]])) list() else x[[".md"]]
 
   if (!is.null(ds_) && !inherits(ds_, "cnts_datasources")) {
     cli::cli_abort(
@@ -43,10 +45,12 @@ connectors <- function(...) {
   }
 
   checkmate::assert_list(x = x, names = "named")
+
   structure(
-    x[names(x) != "datasources"],
+    x[!(names(x) %in% c("datasources", ".md"))],
     class = c("connectors"),
-    datasources = datasources
+    datasources = datasources,
+    metadata = md_
   )
 }
 
@@ -69,12 +73,25 @@ print_connectors <- function(x, ...) {
     as.character() |>
     rlang::set_names(" ")
 
-  cli::cli_bullets(
-    c(
-      "{.cls {class(x)}}",
-      classes
-    )
-  )
+  bullets <- c("{.cls {class(x)}}", classes)
+
+  # Add metadata if present
+  metadata <- attr(x, "metadata")
+  if (!is.null(metadata) && length(metadata) > 0) {
+    metadata_lines <- metadata |>
+      purrr::imap(\(value, name) {
+        glue::glue(
+          "<:cli::symbol$arrow_right:> <:name:>: {.val <:value:>}",
+          .open = "<:",
+          .close = ":>"
+        )
+      }) |>
+      rlang::set_names(" ")
+
+    bullets <- c(bullets, " " = "", " " = "Metadata:", metadata_lines)
+  }
+
+  cli::cli_bullets(bullets)
   return(invisible(x))
 }
 
@@ -102,38 +119,6 @@ as_datasources <- function(...) {
     ...,
     class = "cnts_datasources"
   )
-}
-
-#' Extract data sources from connectors
-#'
-#' This function extracts the "datasources" attribute from a connectors object.
-#'
-#' @param connectors An object containing connectors with a "datasources" attribute.
-#'
-#' @return An object containing the data sources extracted from the "datasources" attribute.
-#'
-#' @details
-#' The function uses the `attr()` function to access the "datasources" attribute
-#' of the `connectors` object. It directly returns this attribute without any
-#' modification.
-#'
-#' @examples
-#' # Assume we have a 'mock_connectors' object with a 'datasources' attribute
-#' mock_connectors <- structure(list(), class = "connectors")
-#' attr(mock_connectors, "datasources") <- list(source1 = "data1", source2 = "data2")
-#'
-#' # Using the function
-#' result <- datasources(mock_connectors)
-#' print(result)
-#'
-#' @export
-datasources <- function(connectors) {
-  if (!is_connectors(connectors)) {
-    cli::cli_abort("param connectors should be a connectors object.")
-  }
-
-  ds <- attr(connectors, "datasources")
-  ds
 }
 
 #' Create a nested connectors object

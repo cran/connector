@@ -7,8 +7,8 @@
 \usage{
 upload_directory_cnt(
   connector_object,
-  dir,
-  name,
+  src,
+  dest,
   overwrite = zephyr::get_option("overwrite", "connector"),
   open = FALSE,
   ...
@@ -16,8 +16,8 @@ upload_directory_cnt(
 
 \method{upload_directory_cnt}{ConnectorFS}(
   connector_object,
-  dir,
-  name,
+  src,
+  dest,
   overwrite = zephyr::get_option("overwrite", "connector"),
   open = FALSE,
   ...
@@ -26,11 +26,14 @@ upload_directory_cnt(
 \arguments{
 \item{connector_object}{\link{Connector} The connector object to use.}
 
-\item{dir}{\link{character} Path to the directory to upload}
+\item{src}{\link{character} Path to the directory to upload}
 
-\item{name}{\link{character} The name of the new directory to place the content in}
+\item{dest}{\link{character} The name of the new directory to place the content in}
 
-\item{overwrite}{Overwrite existing content if it exists in the connector?. Default: \code{FALSE}.}
+\item{overwrite}{Overwrite existing content if it exists in the connector?
+See \link{connector-options} for details. Default can be set globally with
+\code{options(connector.overwrite = TRUE/FALSE)} or environment variable
+\code{R_CONNECTOR_OVERWRITE}.. Default: \code{FALSE}.}
 
 \item{open}{\link{logical} Open the directory as a new connector object.}
 
@@ -46,4 +49,24 @@ Mostly relevant for file storage connectors.
 \itemize{
 \item \link{ConnectorFS}: Uses \code{\link[fs:copy]{fs::dir_copy()}}.
 }
+}
+\examples{
+
+# Upload a directory to a file storage
+folder <- withr::local_tempdir("test", .local_envir = .GlobalEnv)
+
+cnt <- connector_fs(folder)
+# Create a source directory
+dir.create(file.path(folder, "src_dir"))
+writeLines(
+  "This is a test file.",
+  file.path(folder, "src_dir", "test.txt")
+)
+# Upload the directory
+cnt |>
+  upload_directory_cnt(
+    src = file.path(folder, "src_dir"),
+    dest = "uploaded_dir"
+  )
+
 }

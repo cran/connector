@@ -7,9 +7,19 @@
 \item{verbosity_level}{Verbosity level for functions in connector.
 See \link[zephyr:verbosity_level]{zephyr::verbosity_level} for details.. Default: \code{"verbose"}.}
 
-\item{overwrite}{Overwrite existing content if it exists in the connector?. Default: \code{FALSE}.}
+\item{overwrite}{Overwrite existing content if it exists in the connector?
+See \link{connector-options} for details. Default can be set globally with
+\code{options(connector.overwrite = TRUE/FALSE)} or environment variable
+\code{R_CONNECTOR_OVERWRITE}.. Default: \code{FALSE}.}
 
-\item{logging}{Add logs to the console as well as to the whirl log html files. Default: \code{FALSE}.}
+\item{logging}{Add logging capability to connectors using \code{\link[=add_logs]{add_logs()}}.
+When \code{TRUE}, all connector operations will be logged to the console and
+to whirl log HTML files. See \link{log-functions} for available
+logging functions.. Default: \code{FALSE}.}
+
+\item{default_ext}{Default extension to use when reading and writing files when not
+specified in the file name. E.g. with the default 'csv', files are assumed
+to be in CSV format if not specified.. Default: \code{"csv"}.}
 }
 \description{
 Internal parameters for reuse in functions

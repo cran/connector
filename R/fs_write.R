@@ -32,7 +32,11 @@ write_file <- function(x, file, overwrite = FALSE, ...) {
 #' Some readr functions allows append, which is why it is included in the check as well
 #' @noRd
 check_file_exists <- function(file, overwrite, ..., .envir = parent.frame()) {
-  if (fs::file_exists(file) && !overwrite && !isTRUE(rlang::list2(...)[["append"]])) {
+  if (
+    fs::file_exists(file) &&
+      !overwrite &&
+      !isTRUE(rlang::list2(...)[["append"]])
+  ) {
     cli::cli_abort(
       "File {.file {file}} already exists. Use {.code overwrite = TRUE} to overwrite.",
       .envir = .envir
@@ -94,7 +98,7 @@ write_ext.rds <- function(file, x, ...) {
 }
 
 #' @description
-#' * `sas7bdat`: [haven::write_sas()]
+#' * `xpt`: [haven::write_xpt()]
 #'
 #' @rdname write_file
 #' @export

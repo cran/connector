@@ -1,4 +1,5 @@
 test_that("extract_function_info works for standard functions", {
+  df <- data.frame(x = 1:10, y = 11:20)
   result <- extract_function_info("stats::lm(formula = y ~ x, data = df)")
 
   expect_s3_class(result, "clean_fct_info")
@@ -24,7 +25,10 @@ test_that("extract_base_info correctly extracts package and function names", {
   expect_equal(result1, list(package_name = "stats", func_name = "lm"))
 
   result2 <- extract_base_info("Connector$new", TRUE)
-  expect_equal(result2, list(package_name = c(name = "connector"), func_name = "Connector"))
+  expect_equal(
+    result2,
+    list(package_name = c(name = "connector"), func_name = "Connector")
+  )
 })
 
 test_that("get_standard_specific_info works correctly", {
@@ -44,7 +48,10 @@ test_that("extract_and_process_params handles named and unnamed parameters", {
 test_that("process_ellipsis_params handles ... correctly", {
   params <- list(x = 1, y = 2, 3, 4)
   result <- process_ellipsis_params(params)
-  expect_equal(result, list(x = 1, y = 2, ... = structure(c(3, 4), names = c("", ""))))
+  expect_equal(
+    result,
+    list(x = 1, y = 2, ... = structure(c(3, 4), names = c("", "")))
+  )
 })
 
 test_that("process_named_params matches unnamed args correctly", {

@@ -1,3 +1,11 @@
+cli::test_that_cli("test example_read", {
+  expect_snapshot_out(example_read_ext())
+})
+
+cli::test_that_cli("test example_read", {
+  expect_snapshot_error(error_extension())
+})
+
 test_that("Test utils for file", {
   ## Supported Fs
   expect_snapshot(supported_fs())
@@ -5,13 +13,8 @@ test_that("Test utils for file", {
   # test error for extension
   expect_error(error_extension())
 
-  expect_snapshot_error(error_extension())
-
-  # Example for extension
-  expect_snapshot_out(example_read_ext())
-
   ## find file
-  temp_dir <- tempdir()
+  temp_dir <- withr::local_tempdir()
   expect_error(
     find_file("test", temp_dir)
   )
@@ -20,7 +23,17 @@ test_that("Test utils for file", {
     c(file.path(temp_dir, "test.txt"), file.path(temp_dir, "test.csv"))
   )
 
-  expect_error(
-    find_file("test", temp_dir)
-  )
+  withr::with_options(
+    new = list(connector.default_ext = ""),
+    code = find_file("test", temp_dir)
+  ) |>
+    expect_error()
+
+  withr::with_options(
+    new = list(connector.default_ext = "txt"),
+    code = find_file("test", temp_dir)
+  ) |>
+    expect_no_error() |>
+    basename() |>
+    expect_equal("test.txt")
 })

@@ -29,7 +29,13 @@ read_cnt.default <- function(connector_object, name, ...) {
 #' @inheritParams connector-options-params
 #' @return `r rd_connector_utils("inv_connector")`
 #' @export
-write_cnt <- function(connector_object, x, name, overwrite = zephyr::get_option("overwrite", "connector"), ...) {
+write_cnt <- function(
+  connector_object,
+  x,
+  name,
+  overwrite = zephyr::get_option("overwrite", "connector"),
+  ...
+) {
   UseMethod("write_cnt")
 }
 
@@ -81,12 +87,12 @@ list_content_cnt.default <- function(connector_object, ...) {
 #' Generic implementing of how to download files from a connector:
 #'
 #' @param connector_object `r rd_connector_utils("connector_object")`
-#' @param name `r rd_connector_utils("name")`
-#' @param file `r rd_connector_utils("file")`
+#' @param src `r rd_connector_utils("name")`
+#' @param dest `r rd_connector_utils("file")`
 #' @param ... `r rd_connector_utils("...")`
 #' @return `r rd_connector_utils("inv_connector")`
 #' @export
-download_cnt <- function(connector_object, name, file = basename(name), ...) {
+download_cnt <- function(connector_object, src, dest = basename(src), ...) {
   UseMethod("download_cnt")
 }
 
@@ -101,18 +107,19 @@ download_cnt.default <- function(connector_object, ...) {
 #' Generic implementing of how to upload files to a connector:
 #'
 #' @param connector_object `r rd_connector_utils("connector_object")`
-#' @param file `r rd_connector_utils("file")`
-#' @param name `r rd_connector_utils("name")`
+#' @param src `r rd_connector_utils("file")`
+#' @param dest `r rd_connector_utils("name")`
 #' @param ... `r rd_connector_utils("...")`
 #' @inheritParams connector-options-params
 #' @return `r rd_connector_utils("inv_connector")`
 #' @export
 upload_cnt <- function(
-    connector_object,
-    file,
-    name = basename(file),
-    overwrite = zephyr::get_option("overwrite", "connector"),
-    ...) {
+  connector_object,
+  src,
+  dest = basename(src),
+  overwrite = zephyr::get_option("overwrite", "connector"),
+  ...
+) {
   UseMethod("upload_cnt")
 }
 
@@ -169,20 +176,21 @@ remove_directory_cnt.default <- function(connector_object, ...) {
 #' Mostly relevant for file storage connectors.
 #'
 #' @param connector_object `r rd_connector_utils("connector_object")`
-#' @param dir [character] Path to the directory to upload
-#' @param name [character] The name of the new directory to place the content in
+#' @param src [character] Path to the directory to upload
+#' @param dest [character] The name of the new directory to place the content in
 #' @param open `r rd_connector_utils("open")`
 #' @param ... `r rd_connector_utils("...")`
 #' @inheritParams connector-options-params
 #' @return `r rd_connector_utils("inv_connector")`
 #' @export
 upload_directory_cnt <- function(
-    connector_object,
-    dir,
-    name,
-    overwrite = zephyr::get_option("overwrite", "connector"),
-    open = FALSE,
-    ...) {
+  connector_object,
+  src,
+  dest,
+  overwrite = zephyr::get_option("overwrite", "connector"),
+  open = FALSE,
+  ...
+) {
   UseMethod("upload_directory_cnt")
 }
 
@@ -198,12 +206,17 @@ upload_directory_cnt.default <- function(connector_object, ...) {
 #' Mostly relevant for file storage connectors.
 #'
 #' @param connector_object `r rd_connector_utils("connector_object")`
-#' @param name [character] The name of the directory to download
-#' @param dir [character] Path to the directory to download to
+#' @param src [character] The name of the directory to download from the connector
+#' @param dest [character] Path to the directory to download to
 #' @param ... `r rd_connector_utils("...")`
 #' @return `r rd_connector_utils("inv_connector")`
 #' @export
-download_directory_cnt <- function(connector_object, name, dir = name, ...) {
+download_directory_cnt <- function(
+  connector_object,
+  src,
+  dest = basename(src),
+  ...
+) {
   UseMethod("download_directory_cnt")
 }
 

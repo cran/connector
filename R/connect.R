@@ -32,15 +32,19 @@
 #' @param metadata [list] Replace, add or create elements to the metadata field found in config
 #' @param datasource [character] Name(s) of the datasource(s) to connect to.
 #' If `NULL` (the default) all datasources are connected.
-#' @param set_env [logical] Should environment variables from the yaml file be set? Default is TRUE.
+#' @param set_env [logical] Should environment variables from the yaml file be set? Default is `TRUE`.
 #' @inheritParams connector-options-params
 #'
 #' @return [connectors]
 #'
 #' @examples
-#' config <- system.file("config", "_connector.yml", package = "connector")
 #'
-#' config
+#' withr::local_dir(withr::local_tempdir("test", .local_envir = .GlobalEnv))
+#' # Create dir for the example in tmpdir
+#' dir.create("example/demo_trial/adam", recursive = TRUE)
+#'
+#' # Create a config file in the example folder
+#' config <- system.file("config", "_connector.yml", package = "connector")
 #'
 #' # Show the raw configuration file
 #' readLines(config) |>
@@ -75,6 +79,8 @@
 #' cnts_nested
 #'
 #' cnts_nested$study1
+#'
+#' withr::deferred_run()
 #' @export
 connect <- function(
   config = "_connector.yml",
@@ -142,6 +148,25 @@ connect_from_config <- function(config) {
   }
 
   connections$datasources <- as_datasources(config["datasources"])
+
+  # Add metadata to the connections object
+  if (!is.null(config$metadata)) {
+    names_co <- sapply(
+      config$datasources,
+      function(x) x[["name"]],
+      USE.NAMES = FALSE
+    )
+
+    test <- any(names_co %in% ".md")
+
+    if (test) {
+      cli::cli_abort(
+        "'.md' is a reserved name. It cannot be used as a name for a data source."
+      )
+    }
+    # placeholder to be transformed as attribute in connectors
+    connections$.md <- config[["metadata"]]
+  }
 
   do.call(what = connectors, args = connections)
 }
